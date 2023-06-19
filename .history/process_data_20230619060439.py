@@ -20,23 +20,23 @@ def get_ICDs_from_mimic_file(fileName, hadmToMap,isdiagnosis=True):
     number_of_null_ICD10_codes = 0
     
     for line in mimicFile: #   0  ,     1    ,    2   ,   3  ,    4
-        tokens = line.strip().split(',')#token will be a list
+        tokens = line.strip().split(',')
         #print(tokens)
-        hadm_id = int(tokens[1])#used to identify and associate the extracted ICD codes with specific hospital admissions
+        hadm_id = int(tokens[1])
         if (len(tokens[3]) == 0):
             if isdiagnosis:
                 if (tokens[4] =='9'):
                     # ignore diagnoses where ICD9_code is null
                     number_of_null_ICD9_codes += 1
-                else:#tokens[4] =='10'
+                else:
                     number_of_null_ICD10_codes += 1
 
                 continue
             else:
                 if (tokens[5] =='9'):
-                    # ignore procedures where ICD9_code is null
+                    # ignore diagnoses where ICD9_code is null
                     number_of_null_ICD9_codes += 1
-                else:#tokens[5] =='10'
+                else:
                     number_of_null_ICD10_codes += 1
 
                 continue
@@ -359,26 +359,7 @@ def convValuestoList(codeDic):
     return codeDic
 
 
-def icd_mapping(CCSRDX_file,CCSRPCS_file,CCSDX_file,CCSPX_file,D_CCSR_Ref_file,P_CCSR_Ref_file,adDx,adPx,adDrug,drugDescription):
-    # creating mappint between all ICD codes to CCS and CCSR mapping
-    ccsTOdescription_Map = create_CCS_CCSR_mapping(CCSRDX_file,CCSRPCS_file,CCSDX_file,CCSPX_file)
-    # getting the description of all codes
-    DxcodeDescription = map_ccsr_description(D_CCSR_Ref_file)
-    PxcodeDescription = map_ccsr_description(P_CCSR_Ref_file,type='Proc')
-    codeDescription ={**DxcodeDescription ,**PxcodeDescription }
-    codeDescription ={**codeDescription ,**convValuestoList(ccsTOdescription_Map),**drugDescription}
-    # mapping diagnois codes
-    adDx,missingDxCodes,set_of_used_codes1 = map_ICD9_to_CCSR(adDx)
-    # mapping procedure codes
-    adPx,missingPxCodes,set_of_used_codes2 = map_ICD9_to_CCSR(adPx)
-    codeDescription['SOH'] = 'Start of history'
-    codeDescription['EOH'] = 'End of history'
-    codeDescription['EOV'] = 'End of visit'
-    displayCodeStats(adDx,adPx,adDrug)
-    return adDx,adPx,codeDescription
-
-
-def create_CCS_CCSR_mapping(CCSRDX_file,CCSRPCS_file,CCSDX_file,CCSPX_file):#ccs is for ICD-9,ccsr is for ICD-10
+def create_CCS_CCSR_mapping(CCSRDX_file,CCSRPCS_file,CCSDX_file,CCSPX_file):
     df = pd.read_csv(CCSRDX_file)
     a = df[["\'ICD-10-CM CODE\'", "\'CCSR CATEGORY 1\'", "\'CCSR CATEGORY 2\'", "\'CCSR CATEGORY 3\'", "\'CCSR CATEGORY 4\'", "\'CCSR CATEGORY 5\'", "\'CCSR CATEGORY 6\'"]]
 
@@ -454,6 +435,25 @@ def create_CCS_CCSR_mapping(CCSRDX_file,CCSRPCS_file,CCSDX_file,CCSPX_file):#ccs
     print("total number of unqiue codes(DIag + proc):", len(v1))
 
     return ccsTOdescription_Map
+
+
+def icd_mapping(CCSRDX_file,CCSRPCS_file,CCSDX_file,CCSPX_file,D_CCSR_Ref_file,P_CCSR_Ref_file,adDx,adPx,adDrug,drugDescription):
+    # creating mappint between all ICD codes to CCS and CCSR mapping
+    ccsTOdescription_Map = create_CCS_CCSR_mapping(CCSRDX_file,CCSRPCS_file,CCSDX_file,CCSPX_file)
+    # getting the description of all codes
+    DxcodeDescription = map_ccsr_description(D_CCSR_Ref_file)
+    PxcodeDescription = map_ccsr_description(P_CCSR_Ref_file,type='Proc')
+    codeDescription ={**DxcodeDescription ,**PxcodeDescription }
+    codeDescription ={**codeDescription ,**convValuestoList(ccsTOdescription_Map),**drugDescription}
+    # mapping diagnois codes
+    adDx,missingDxCodes,set_of_used_codes1 = map_ICD9_to_CCSR(adDx)
+    # mapping procedure codes
+    adPx,missingPxCodes,set_of_used_codes2 = map_ICD9_to_CCSR(adPx)
+    codeDescription['SOH'] = 'Start of history'
+    codeDescription['EOH'] = 'End of history'
+    codeDescription['EOV'] = 'End of visit'
+    displayCodeStats(adDx,adPx,adDrug)
+    return adDx,adPx,codeDescription
 
 
 def countCodes2(dic1,dic2):
@@ -975,12 +975,12 @@ def storeFiles(pair,outTypes,codeType,types,reverseTypes,outFile):
 
 def main(args):
     mimic3_path = args.mimic3_path
-    CCSRDX_file = args.CCSRDX_file#Path of diagnosis based CCSR files
-    CCSRPCS_file = args.CCSRPCS_file#Path of procedure based CCSR files
+    CCSRDX_file = args.CCSRDX_file
+    CCSRPCS_file = args.CCSRPCS_file
     D_CCSR_Ref_file = args.D_CCSR_Ref_file
     P_CCSR_Ref_file = args.P_CCSR_Ref_file
-    CCSDX_file = args.CCSDX_file# Path of diagnosis based CCS files
-    CCSPX_file = args.CCSPX_file#Path of procedure based CCS files
+    CCSDX_file = args.CCSDX_file
+    CCSPX_file = args.CCSPX_file
     min_dx = args.min_dx
     min_px = args.min_px
     min_drg = args.min_drg

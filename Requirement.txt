@@ -11,7 +11,7 @@ seaborn==0.11.1
 pickleshare==0.7.5
 openpyxl==3.0.7
 xlrd==2.0.1
-torch==1.8.1+cu111
-torchaudio==0.8.1
-torchtext==0.9.1
-torchvision==0.9.1+cu111
+torch
+torchaudio
+torchtext
+torchvision
